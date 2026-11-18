@@ -30,6 +30,15 @@ let
 in
 {
   inherit packages;
+  apps = forAllSystems (pkgs:
+    let
+      built = packages.${pkgs.stdenv.hostPlatform.system};
+      mkApp = name: { type = "app"; program = "${built.${name}}/bin/${built.${name}.meta.mainProgram}"; };
+      defaultName = lib.findFirst (name: built ? ${name}) publicNames;
+    in
+    lib.mapAttrs (name: _: mkApp name) built // lib.optionalAttrs (defaultName != null) {
+      default = mkApp defaultName;
+    });
   devShells = forAllSystems (pkgs:
     let formatter = formatterFor pkgs; in {
       default = pkgs.mkShellNoCC {
