@@ -1,0 +1,48 @@
+name: Build VibeZ
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/**"
+      - "versions.nix"
+      - "nix/**"
+      - "flake.nix"
+      - ".github/workflows/build-vibez.yml"
+
+jobs:
+  build:
+    name: Build ${{ matrix.package }} (${{ matrix.system }})
+    strategy:
+      matrix:
+        include:
+          - system: x86_64-linux
+            runner: ubuntu-24.04
+            package: vibez3
+          - system: x86_64-linux
+            runner: ubuntu-24.04
+            package: vibez4-beta
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Determinate Nix
+        uses: DeterminateSystems/determinate-nix-action@main
+
+      - name: Setup FlakeHub cache
+        uses: DeterminateSystems/flakehub-cache-action@main
+
+      - name: Setup cachix
+        uses: cachix/cachix-action@v17
+        with:
+          name: x13
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+      - name: Build
+        run: nix build ".#${{ matrix.package }}"

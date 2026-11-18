@@ -1,0 +1,20 @@
+[formatter.nixfmt]
+command = "nixfmt"
+options = [
+  "--width=100"
+]
+includes = [ "*.nix" ]
+
+[formatter.deadnix]
+command = "deadnix"
+options = [ "--no-lambda-arg" ]
+includes = [ "*.nix" ]
+
+[formatter.statix]
+command = "statix"
+options = [ "check" ]
+includes = [ "*.nix" ]
+
+[formatter.keep-sorted]
+command = "keep-sorted"
+includes = [ "*.nix" ]
