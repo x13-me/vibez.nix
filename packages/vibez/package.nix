@@ -22,6 +22,9 @@
   webkitgtk_4_1,
   libsoup_3,
   openssl,
+  libayatana-appindicator,
+  python3,
+  bubblewrap,
   variant,
 }:
 let
@@ -51,12 +54,16 @@ stdenv.mkDerivation {
 
     dpkg-deb -x "$src" unpacked
 
-    mkdir -p "$out/bin" "$out/share"
-    cp -r unpacked/usr/share/applications "$out/share/"
-    cp -r unpacked/usr/share/icons "$out/share/"
-    install -Dm755 "unpacked/usr/bin/${release.binaryName}" "$out/bin/${release.binaryName}"
+    mkdir -p "$out"
+    cp -r unpacked/usr/bin "$out/bin"
+    cp -r unpacked/usr/share "$out/share"
+    cp -r unpacked/usr/lib "$out/lib" 2>/dev/null || true
 
-    wrapProgram "$out/bin/${release.binaryName}" \
+    mv "$out/bin/${release.binaryName}" "$out/bin/.${release.binaryName}-unwrapped"
+    # v4-beta execve's /usr/bin/python3 by absolute path; bind the nix python3
+    # there with bubblewrap. v3 doesn't need it but the bind is harmless.
+    makeWrapper "$out/bin/.${release.binaryName}-unwrapped" "$out/bin/${release.binaryName}" \
+      --run "exec ${bubblewrap}/bin/bwrap --bind / / --bind ${python3}/bin/python3 /usr/bin/python3 -- \"$out/bin/.${release.binaryName}-unwrapped\"" \
       --suffix LD_LIBRARY_PATH : ${
         lib.makeLibraryPath [
           glib
@@ -68,6 +75,7 @@ stdenv.mkDerivation {
           webkitgtk_4_1
           libsoup_3
           openssl
+          libayatana-appindicator
         ]
       }
 
